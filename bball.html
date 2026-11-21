@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Government of Fantasia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<style>
+/* Layout: a federal org chart (US-chart color branches + Roman-chart arrows + Devon-chart dotted web) on a fixed 1700px canvas, register and procedures below */
+:root{
+  --paper:#F3F4F0; --card:#FFFFFF; --ink:#1A2233; --muted:#5A6172; --rule:#C7CBD2;
+  --leg:#2F6FCC; --leg-bg:#DCE7F7;
+  --exe:#C99414; --exe-bg:#FBEEC4;
+  --jud:#C94A1F; --jud-bg:#F7DACD;
+  --alleged:#7A5A9E; --vibe:#0E6B63; --vibe-bg:#0E4E49; --vibe-ink:#F2FAF8;
+  --asm-bg:#E6E7E1;
+  --f-display:"Cinzel", "Trajan Pro", Georgia, serif;
+  --f-body:"Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#12151C; --card:#1B1F29; --ink:#E5E8EF; --muted:#9AA1B2; --rule:#343A48;
+  --leg:#6FA3F0; --leg-bg:#1A2740; --exe:#E6B94A; --exe-bg:#332A12; --jud:#F07B52; --jud-bg:#3A1F16;
+  --alleged:#B495D8; --vibe:#3DC2B2; --vibe-bg:#0D3B37; --vibe-ink:#EAF8F5; --asm-bg:#1E222B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#12151C; --card:#1B1F29; --ink:#E5E8EF; --muted:#9AA1B2; --rule:#343A48;
+  --leg:#6FA3F0; --leg-bg:#1A2740; --exe:#E6B94A; --exe-bg:#332A12; --jud:#F07B52; --jud-bg:#3A1F16;
+  --alleged:#B495D8; --vibe:#3DC2B2; --vibe-bg:#0D3B37; --vibe-ink:#EAF8F5; --asm-bg:#1E222B; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:36px 64px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:.02em}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header.top{display:grid;gap:10px;margin-bottom:22px;max-width:760px}
+header.top h1{font-size:clamp(30px,5vw,50px);line-height:1.05}
+header.top p{margin:0;color:var(--muted);font-size:15.5px;max-width:65ch}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;justify-content:space-between;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);padding-block:10px;margin-bottom:14px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend svg{flex:none}
+.zoom{display:flex;gap:6px}
+.zoom button{font:600 12px var(--f-body);color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:6px 10px;cursor:pointer}
+.zoom button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.zoom button:focus-visible{outline:2px solid var(--leg);outline-offset:2px}
+
+.chart-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--rule);background:var(--paper);border-radius:2px}
+.sizer{position:relative;overflow:hidden}
+.canvas{position:relative;width:1700px;display:grid;grid-template-columns:1320px 40px 320px;padding:40px 20px 34px 0;transform-origin:0 0}
+.gov{padding:0 60px 0 80px;display:flex;flex-direction:column}
+svg.wires{position:absolute;left:0;top:0;z-index:2;pointer-events:none;overflow:visible}
+.labels{position:absolute;inset:0;z-index:5;pointer-events:none}
+.z{position:relative;z-index:3}
+
+/* wires */
+.w{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.w.auth{stroke:var(--ink);stroke-width:1.6}
+.w.tree{stroke:var(--ink);stroke-width:1.8}
+.w.adv{stroke:var(--muted);stroke-width:1.9;stroke-dasharray:1 5}
+.w.inv{stroke:var(--jud);stroke-width:1.7;stroke-dasharray:7 4}
+.w.alleged{stroke:var(--alleged);stroke-width:1.3;stroke-dasharray:2 4;opacity:.85}
+.w.veto-o{stroke:var(--jud);stroke-width:5}
+.w.veto-i{stroke:var(--paper);stroke-width:1.6}
+.w.vibe{stroke:var(--vibe);stroke-width:3.2}
+.lbl{position:absolute;transform:translate(-50%,-50%);background:var(--paper);border:1px solid var(--rule);border-radius:3px;padding:2px 6px;font-size:10.5px;font-weight:600;line-height:1.25;text-align:center;max-width:118px;width:max-content;color:var(--ink)}
+.lbl.adv{color:var(--muted);font-style:italic;font-weight:400}
+.lbl.inv{color:var(--jud);border-color:var(--jud)}
+.lbl.alleged{color:var(--alleged);font-style:italic;font-weight:400;border-style:dashed;border-color:var(--alleged)}
+.lbl.veto{color:var(--card);background:var(--jud);border-color:var(--jud);text-transform:uppercase;letter-spacing:.06em;font-size:9.5px}
+.lbl.vibe{color:var(--vibe-ink);background:var(--vibe);border-color:var(--vibe);max-width:170px}
+.lbl.rot{transform:translate(-50%,-50%) rotate(-90deg);max-width:none;white-space:nowrap}
+
+/* rows */
+.row1{display:grid;grid-template-columns:300px 1fr 300px;align-items:start}
+.row2{display:grid;grid-template-columns:repeat(3,1fr);gap:60px;align-items:start;margin-top:70px}
+.row3{display:grid;grid-template-columns:repeat(6,1fr);gap:17px;align-items:start;margin-top:112px}
+.row4{margin-top:124px}
+.row5{margin-top:56px}
+
+.box{background:var(--card);border:1.5px solid var(--ink);padding:10px 12px;font-size:11.5px;line-height:1.4}
+.box h3{margin:0 0 4px;font-size:12.5px;line-height:1.2;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.who{font-weight:700;font-size:12px;margin:0 0 5px;color:var(--ink)}
+.who b{display:inline-block;background:var(--ink);color:var(--card);padding:0 5px;border-radius:2px;margin-right:4px;font-size:11px;letter-spacing:.04em}
+.box p{margin:0;color:var(--muted)}
+.subs{margin:7px 0 0;padding:6px 0 0;border-top:1px dotted var(--rule);list-style:none;display:grid;gap:2px;font-size:10.5px;color:var(--ink)}
+.subs li::before{content:"› ";color:var(--muted)}
+.tag{display:inline-block;font:500 9.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;border:1.5px solid var(--ink);background:var(--card);padding:2px 7px}
+
+.charter{justify-self:center;width:360px;text-align:center;border-width:2.5px;padding:14px 16px}
+.charter h3{font-family:var(--f-display);font-size:22px;letter-spacing:.08em;text-transform:none;margin-bottom:4px}
+.charter .stamp{font:500 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+.ghost{background:var(--paper);border:1.5px dashed var(--alleged);color:var(--ink)}
+.ghost .tag{border-color:var(--alleged);color:var(--alleged);background:var(--paper);margin-bottom:7px}
+.ghost h3{color:var(--alleged)}
+.ghost .who b{background:var(--alleged)}
+.redact{background:var(--ink);color:var(--ink);border-radius:1px;padding:0 2px}
+.lurk{border-style:solid;border-color:var(--rule);opacity:.92}
+.lurk .tag{border-color:var(--muted);color:var(--muted);margin-bottom:7px}
+.lurk .who b{background:var(--muted)}
+
+.panel{position:relative;border:2px solid var(--ink);padding:0 14px 16px;display:flex;flex-direction:column;gap:34px}
+.panel.leg{background:var(--leg-bg)}
+.panel.exe{background:var(--exe-bg)}
+.panel.jud{background:var(--jud-bg)}
+.panel > .ph{text-align:center;margin-top:-12px;display:grid;justify-items:center;gap:6px;margin-bottom:-18px}
+.panel > .ph h2{font-size:15px;letter-spacing:.06em}
+.panel.leg .tag{border-color:var(--leg)} .panel.exe .tag{border-color:var(--exe)} .panel.jud .tag{border-color:var(--jud)}
+.panel .minor{font-size:10.5px;color:var(--muted);text-align:center;margin:0}
+.panel .minor b{color:var(--ink);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:9.5px;display:block;margin-bottom:2px}
+.panel.leg .box{border-color:var(--leg)} .panel.exe .box{border-color:var(--exe)} .panel.jud .box{border-color:var(--jud)}
+.vacant{font:500 10px var(--f-mono);letter-spacing:.05em;color:var(--jud);text-transform:uppercase;display:block;margin-top:5px}
+
+.dept{background:var(--exe-bg);border:1.5px solid var(--exe);text-align:left}
+.dept .kind{font:500 9px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.dept h3{min-height:45px}
+
+.indep{background:var(--exe-bg);border:1.5px solid var(--exe);padding:14px 20px 16px}
+.indep h3{text-align:center;font-size:11.5px;letter-spacing:.1em;margin-bottom:10px}
+.indep ul{columns:4;column-gap:24px;list-style:none;margin:0;padding:0;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;line-height:1.7}
+
+.assembly{background:var(--asm-bg);border:2px solid var(--ink);padding:14px 20px;text-align:center}
+.assembly h3{font-family:var(--f-display);text-transform:none;font-size:19px;letter-spacing:.04em}
+.assembly p{margin:2px auto 10px;max-width:70ch}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.chips span{font:500 11px var(--f-mono);border:1px solid var(--rule);background:var(--card);padding:2px 8px;border-radius:2px}
+.chips span.v{border-color:var(--vibe);color:var(--vibe)}
+
+.boundary{position:relative;display:flex;justify-content:center}
+.boundary::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:6px;margin-left:-3px;border-left:1.5px solid var(--ink);border-right:1.5px solid var(--ink)}
+.boundary span{position:sticky;top:0;margin-top:230px;writing-mode:vertical-rl;transform:rotate(180deg);background:var(--paper);font:500 10px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:10px 0;z-index:3;height:max-content}
+
+.cviocol{padding:150px 0 0 20px}
+.cvio{background:var(--vibe-bg);color:var(--vibe-ink);border:0;padding:18px 18px 16px;position:relative;box-shadow:0 0 0 4px var(--paper),0 0 0 5.5px var(--vibe)}
+.cvio .tag{background:transparent;color:var(--vibe-ink);border-color:var(--vibe-ink);opacity:.85}
+.cvio h3{font-family:var(--f-display);text-transform:none;font-size:20px;line-height:1.15;margin:10px 0 4px;letter-spacing:.02em}
+.cvio p{color:var(--vibe-ink);opacity:.82;margin:0 0 12px}
+.mini{display:grid;justify-items:center;gap:0;margin:6px 0 14px}
+.mini div{background:var(--vibe-ink);color:var(--vibe-bg);padding:6px 10px;text-align:center;font-size:11px;width:210px;border-radius:2px}
+.mini div b{display:block;font-size:13px}
+.mini i{display:block;width:2px;height:16px;background:var(--vibe-ink)}
+.stats{display:grid;grid-template-columns:1fr auto;gap:3px 12px;font:500 11px var(--f-mono);border-top:1px solid color-mix(in srgb,var(--vibe-ink) 35%,transparent);padding-top:10px}
+.stats dt{opacity:.8}.stats dd{margin:0;text-align:right;font-weight:500}
+.approved{position:absolute;right:-12px;top:-16px;transform:rotate(8deg);font:500 11px var(--f-mono);letter-spacing:.14em;color:var(--vibe);border:2px solid var(--vibe);background:var(--paper);padding:3px 8px}
+
+/* below the chart */
+section.more{margin-top:52px}
+section.more > h2{font-size:24px;margin-bottom:6px}
+section.more > p.lede{color:var(--muted);margin:0 0 20px;max-width:65ch}
+.proc{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:28px;align-items:start}
+.proc ol{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:0;border-top:1px solid var(--rule)}
+.proc ol li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid var(--rule)}
+.proc ol li::before{content:counter(s,decimal-leading-zero);font:500 12px var(--f-mono);color:var(--muted);padding-top:1px;font-variant-numeric:tabular-nums}
+.proc ol li em{color:var(--muted)}
+.proc .elapsed{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;margin-top:10px;color:var(--jud)}
+.fast{background:var(--vibe-bg);color:var(--vibe-ink);padding:18px 20px}
+.fast h3{margin:0 0 10px;font-family:var(--f-display);font-size:17px}
+.fast ol{border-top-color:color-mix(in srgb,var(--vibe-ink) 30%,transparent)}
+.fast ol li{border-bottom-color:color-mix(in srgb,var(--vibe-ink) 30%,transparent)}
+.fast ol li::before{color:var(--vibe-ink);opacity:.7}
+.fast .elapsed{color:var(--vibe-ink)}
+
+.register{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.reg{background:var(--card);border:1px solid var(--rule);border-top:4px solid var(--c,var(--ink));padding:12px 14px;display:grid;gap:6px;min-width:0}
+.reg .n{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.reg .n strong{font-size:17px}
+.reg .n span{font:500 9.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--c,var(--muted));text-align:right}
+.reg .t{font-weight:700;font-size:13px;line-height:1.3}
+.reg dl{margin:4px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:12px}
+.reg dt{font:500 10px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.reg dd{margin:0}
+.vac{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 24px;margin:0;padding:0;list-style:none;font-size:13px}
+.vac li{border-left:3px solid var(--jud);padding-left:10px}
+.vac li b{display:block}
+.vac li span{color:var(--muted)}
+footer{margin-top:44px;padding-top:12px;border-top:1px solid var(--rule);font:500 11px var(--f-mono);color:var(--muted);letter-spacing:.04em}
+@media (max-width:760px){.proc{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== The Docket ===== */
+.jump{display:inline-flex;align-items:center;gap:8px;width:max-content;margin-top:6px;font:600 13px var(--f-body);color:var(--paper);background:var(--ink);padding:8px 14px;border-radius:3px;text-decoration:none}
+.jump:focus-visible{outline:2px solid var(--leg);outline-offset:2px}
+.badge{position:absolute;top:-11px;right:-11px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--jud);color:#fff;font:600 11px/24px var(--f-mono);text-align:center;box-shadow:0 0 0 2.5px var(--paper);z-index:6}
+#docket{scroll-margin-top:16px}
+.dk-head{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:end;justify-content:space-between;border-top:2px solid var(--ink);padding-top:14px;margin-bottom:18px}
+.dk-head h2{font-size:28px}
+.dk-head p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.acting{display:grid;gap:4px;min-width:min(100%,280px)}
+.acting label{font:500 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+select,input[type=text],textarea{font:14px var(--f-body);color:var(--ink);background:var(--card);border:1.5px solid var(--ink);border-radius:2px;padding:8px 10px;width:100%}
+textarea{min-height:84px;resize:vertical}
+select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--leg);outline-offset:1px}
+.acting small{color:var(--muted);font-size:11.5px}
+.dk-note{background:var(--card);border:1px dashed var(--rule);padding:10px 14px;font-size:13px;color:var(--muted);margin-bottom:16px}
+.dk-note[data-kind=warn]{border-color:var(--jud);color:var(--jud)}
+.dk-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px;align-items:start}
+@media (max-width:880px){.dk-grid{grid-template-columns:1fr}}
+.panelish{background:var(--card);border:1.5px solid var(--ink);padding:16px 18px}
+.panelish > h3{margin:0 0 4px;font-family:var(--f-display);font-size:18px}
+.panelish > p.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+.type{all:unset;box-sizing:border-box;cursor:pointer;border:1.5px solid var(--rule);background:var(--paper);padding:9px 10px;display:grid;gap:3px;border-radius:2px}
+.type b{font-size:12.5px;line-height:1.25}
+.type span{font:500 10px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.type[aria-pressed=true]{border-color:var(--ink);background:var(--exe-bg);box-shadow:inset 0 0 0 1px var(--ink)}
+.type:focus-visible{outline:2px solid var(--leg);outline-offset:2px}
+.field{display:grid;gap:5px;margin-bottom:12px}
+.field label{font:500 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.route{display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;margin:2px 0 0;padding:0;list-style:none}
+.route li{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 7px;border:1px solid var(--rule);background:var(--paper);border-radius:2px;color:var(--muted)}
+.route li + li::before{content:"→";margin:0 4px 0 -2px;color:var(--muted);font-weight:400}
+.route li{position:relative}
+.route li.done{color:var(--ink);border-color:var(--ink)}
+.route li.done::after{content:"✓";font-size:10px;color:var(--vibe)}
+.route li.now{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.route li.repeat{border-style:dashed}
+.vetoers{font-size:12px;color:var(--muted);margin:10px 0 0}
+.vetoers b{color:var(--jud)}
+.hold{position:relative;overflow:hidden;font:700 13px var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:0;border-radius:3px;padding:11px 16px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;--p:0}
+.hold::before{content:"";position:absolute;inset:0;background:var(--vibe);transform:scaleX(var(--p));transform-origin:left;opacity:.9}
+.hold > span{position:relative}
+.hold.veto{background:var(--jud)}
+.hold.veto::before{background:#000;opacity:.35}
+.hold.quiet{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.hold.quiet::before{background:var(--rule)}
+.hold:disabled{opacity:.4;cursor:not-allowed}
+.hold:focus-visible{outline:2px solid var(--leg);outline-offset:2px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.tabs button{font:600 12px var(--f-body);color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:2px;padding:6px 10px;cursor:pointer}
+.tabs button[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tabs button span{font:500 10.5px var(--f-mono);opacity:.75;margin-left:4px}
+.list{display:grid;gap:14px}
+.empty{border:1.5px dashed var(--rule);padding:22px;text-align:center;color:var(--muted);font-size:13.5px}
+.form{position:relative;background:var(--paper);border:1.5px solid var(--ink);padding:14px 16px;display:grid;gap:10px;overflow:hidden}
+.form.approved{border-color:var(--vibe)}
+.form.vetoed{border-color:var(--jud)}
+.form.withdrawn{opacity:.7;border-style:dashed}
+.form .top{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:space-between;align-items:baseline}
+.form .no{font:500 10.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.form h4{margin:0;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.form .det{margin:0;font-size:13px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.pill{font:600 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:2px;border:1.5px solid currentColor;white-space:nowrap}
+.pill.routing{color:var(--exe)} .pill.approved{color:var(--vibe)} .pill.vetoed{color:var(--jud)} .pill.withdrawn{color:var(--muted)}
+.desk{font-size:12.5px;border-left:3px solid var(--exe);padding:2px 0 2px 10px}
+.desk b{font-weight:700}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note-in{flex:1 1 200px;min-width:0}
+.note-in input{padding:9px 10px;font-size:13px}
+details.log summary{cursor:pointer;font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+details.log ol{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+details.log li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;font-size:12.5px}
+.mark{font:600 9.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border:1.5px solid currentColor;transform:rotate(-3deg);display:inline-block;white-space:nowrap}
+.mark.filed{color:var(--muted)} .mark.stamped{color:var(--leg)} .mark.returned{color:var(--exe)} .mark.final{color:var(--vibe)} .mark.vetoed{color:var(--jud)} .mark.waived{color:var(--alleged)} .mark.withdrawn{color:var(--muted)}
+details.log li em{color:var(--muted);font-style:normal;font-size:11.5px}
+.bigstamp{position:absolute;right:14px;top:40px;transform:rotate(-12deg);font:700 22px var(--f-display);letter-spacing:.08em;padding:4px 12px;border:3px double currentColor;pointer-events:none;opacity:.85}
+.bigstamp.approved{color:var(--vibe)} .bigstamp.vetoed{color:var(--jud)}
+.thunk{animation:thunk .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes thunk{0%{transform:scale(1)}30%{transform:scale(.985) translateY(2px)}100%{transform:scale(1)}}
+.bigstamp.fresh{animation:slam .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes slam{0%{transform:rotate(-12deg) scale(2.4);opacity:0}60%{opacity:.95}100%{transform:rotate(-12deg) scale(1);opacity:.85}}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:3px;font-size:13px;z-index:50;max-width:calc(100% - 32px);text-align:center}
+@media (prefers-reduced-motion:reduce){.thunk,.bigstamp.fresh{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Form SF-17 · Organizational Chart · 2026-27 Season</div>
+    <h1>The Government of Fantasia</h1>
+    <p>The complete administrative structure of the league, as ratified at the Draft and amended by group chat. Seventeen managers, three branches, six executive departments, twenty-four independent establishments, one secret society, and one office that works.</p>
+    <a class="jump" href="#docket">Open the Docket ↓</a>
+  </header>
+
+  <div class="toolbar">
+    <div class="legend" aria-label="Line legend">
+      <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="w auth"/></svg>Direct authority</span>
+      <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="w adv"/></svg>Dotted-line / advisory</span>
+      <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="w inv"/></svg>Investigative</span>
+      <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="w veto-o"/><line x1="2" y1="5" x2="32" y2="5" class="w veto-i"/></svg>Veto power</span>
+      <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="w alleged"/></svg>Alleged influence</span>
+      <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="w vibe"/></svg>Vibes (efficient)</span>
+    </div>
+    <div class="zoom" role="group" aria-label="Chart size">
+      <button id="z-fit" type="button" aria-pressed="false">Fit to width</button>
+      <button id="z-full" type="button" aria-pressed="false">Actual size</button>
+    </div>
+  </div>
+
+  <div class="chart-scroll" id="scroller">
+   <div class="sizer" id="sizer">
+    <div class="canvas" id="canvas">
+      <svg class="wires" id="wires" aria-hidden="true">
+        <defs>
+          <marker id="m-auth" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink)"/></marker>
+          <marker id="m-adv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker>
+          <marker id="m-inv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--jud)"/></marker>
+          <marker id="m-alleged" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--alleged)"/></marker>
+          <marker id="m-veto" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--jud)"/></marker>
+          <marker id="m-vibe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--vibe)"/></marker>
+        </defs>
+        <g id="wire-g"></g>
+      </svg>
+      <div class="labels" id="labels"></div>
+
+      <div class="gov">
+        <!-- ROW 1 -->
+        <div class="row1">
+          <div class="box ghost z" id="ss">
+            <span class="tag">Existence neither confirmed nor denied</span>
+            <h3>Secret Society of the Implicated Horn</h3>
+            <div class="who"><b>JOEL</b>Grand Tooter</div>
+            <p>Membership <span class="redact">classified</span>. Keeps no minutes, by design. Believed to shape the Charter, the Senate and the Commissioner. Has never formally tooted.</p>
+            <ul class="subs"><li>Lodge of the Muted Brass</li><li>Office of Plausible Deniability</li></ul>
+          </div>
+          <div class="box charter z" id="charter">
+            <h3>The Charter</h3>
+            <p>League Constitution, Platform Settings &amp; Oral Tradition</p>
+            <div class="stamp">Ratified at the Draft · Amended by whoever posted last</div>
+          </div>
+          <div class="box lurk z" id="gbnf">
+            <span class="tag">Last seen: Week 3</span>
+            <h3>Department of the Gone but Not Forgotten</h3>
+            <div class="who"><b>EAN</b>Chief Lurking Officer</div>
+            <p>Reads everything. Replies to nothing. Last confirmed activity: a thumbs-up reaction.</p>
+            <ul class="subs"><li>Bureau of Read Receipts</li><li>Autodraft Affairs Administration</li><li>Hall of Former Managers</li></ul>
+          </div>
+        </div>
+
+        <!-- ROW 2: BRANCHES -->
+        <div class="row2">
+          <div class="panel leg" id="leg">
+            <div class="ph z"><span class="tag">Legislative Branch</span><h2>The Bicameral Congress</h2></div>
+            <p class="minor z"><b>Supporting offices</b>Library of Past Rulebooks · Keeper Rules Drafting Office · Congressional Budget Office (see Means and Ways)</p>
+            <div class="box z" id="senate">
+              <h3>Senate of the Emeriti</h3>
+              <div class="who"><b>TORIN</b>Professor Emeritus, Socratic Method Institute</div>
+              <p>Upper chamber. Sole member, serving for life. Answers every bill with a follow-up question.</p>
+              <ul class="subs"><li>Office of Follow-Up Questions</li><li>Standing Committee on What We Mean by "Clarify"</li></ul>
+            </div>
+            <div class="box z" id="means">
+              <h3>Means and Ways Committee</h3>
+              <div class="who"><b>MARCO</b>Vice-Comptroller</div>
+              <p>Lower chamber. Controls buy-ins, dues and payouts.</p>
+              <span class="vacant">Comptroller: vacant since founding</span>
+              <ul class="subs"><li>Subcommittee on Dues Arrears</li><li>Joint Venmo Reconciliation Task Force</li><li>Payout Disbursement Working Group (meets once, in April)</li></ul>
+            </div>
+          </div>
+
+          <div class="panel exe" id="exe">
+            <div class="ph z"><span class="tag">Executive Branch</span><h2>Department of Sports and Fantasia</h2></div>
+            <div class="box z" id="commish">
+              <h3>Office of the Commissioner</h3>
+              <div class="who"><b>DC</b>Commissioner</div>
+              <p>Chief executive of the league. Elected each season under Section 4(b) of the Charter, which no one has read.</p>
+            </div>
+            <div class="box z" id="cott">
+              <h3>Commissioning Affairs Bureau</h3>
+              <div class="who"><b>COTT</b>Vice Dean</div>
+              <p>Runs day-to-day commissioning. Serves as Acting Dean pending a Dean Search Committee, which is also pending.</p>
+              <span class="vacant">Office of the Dean: vacant</span>
+            </div>
+            <p class="minor z"><b>Executive Office of the Commissioner</b>Waiver Wire Adjudication Office · Trade Review Clock Authority · Bureau of Matchup Allocation · Office of Mid-Season Scoring Tweaks · Office of Retroactive Clarifications</p>
+          </div>
+
+          <div class="panel jud" id="jud">
+            <div class="ph z"><span class="tag">Judicial Branch</span><h2>Department of the Substratum</h2></div>
+            <div class="box z" id="magistrate">
+              <h3>Supreme Tribunal of the Substratum</h3>
+              <div class="who"><b>DAVID</b>Magistrate General</div>
+              <p>Final authority on everything beneath everything else. Rulings are binding until someone complains.</p>
+            </div>
+            <p class="minor z"><b>Lower courts</b>Court of Veto Appeals · Tribunal of Stat Corrections · Small Claims (Side Bets) Court · Sentencing Commission for Last Place</p>
+            <div class="box z" id="prismatic">
+              <h3>Office of Prismatic Intent</h3>
+              <div class="who"><b>SAMIR</b>General Counsel</div>
+              <p>Interprets each rule from every angle of the spectrum. Issues seven concurring opinions per question.</p>
+            </div>
+            <div class="box z" id="cookie">
+              <h3>Missing Cookie from the Cookie Jar Division</h3>
+              <div class="who"><b>ELIAS</b>Principal Investigator</div>
+              <p>Investigates collusion, tanking, lopsided trades and anyone who benched a starter "by accident."</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 3: DEPARTMENTS -->
+        <div class="row3">
+          <div class="box dept z" id="d-pr"><span class="kind">Department</span><h3>Public Relations Factory</h3><div class="who"><b>JESSE</b>Floor Foreman</div><p>Manufactures power rankings, recaps and official spin on an assembly line.</p><ul class="subs"><li>Power Rankings Assembly Line</li><li>The Spin Room</li><li>Night Shift for Post-Loss Statements</li></ul></div>
+          <div class="box dept z" id="d-whelk"><span class="kind">Division</span><h3>Cheeky Whelk Division</h3><div class="who"><b>CHUCK</b>Quality Assurance</div><p>Inspects all banter for cheekiness before release. Rejects anything under grade.</p><ul class="subs"><li>Meme Inspection Station</li><li>Bureau of Returned Jokes</li><li>Whelk Standards Laboratory</li></ul></div>
+          <div class="box dept z" id="d-foreign"><span class="kind">Office</span><h3>Foreign Affairs, Green Text Division</h3><div class="who"><b>BRYAN</b>Foreign Affairs</div><p>Manages relations with green-bubble nations and other leagues. Handles diplomacy when the videos arrive blurry.</p><ul class="subs"><li>Consulate for Android Relations</li><li>Embassy to Other Leagues</li><li>Bureau of Failed Reactions</li></ul></div>
+          <div class="box dept z" id="d-culture"><span class="kind">Office</span><h3>Cultural Ambassador to the Culture</h3><div class="who"><b>DK</b>Manager of Management</div><p>Manages the managers who manage. Holds tribunician veto. The Ambassador seat belongs to the Culture, which has not responded.</p><ul class="subs"><li>Office of Traditions</li><li>Directorate of Managing Management</li><li>Protocol Desk</li></ul></div>
+          <div class="box dept z" id="d-guard"><span class="kind">Armed Service</span><h3>Beef Color Guard</h3><div class="who"><b>ANDY</b>Four Star General</div><p>Defends the league's rivalries. Keeps every beef active, ceremonial and properly flagged.</p><ul class="subs"><li>Rivalry Week Command</li><li>Trash Talk Readiness Division</li><li>Joint Chiefs of Beef</li></ul></div>
+          <div class="box dept z" id="d-bazaar"><span class="kind">Market Authority</span><h3>The Playtime Bazaar</h3><div class="who"><b>COBY</b>Sheikh</div><p>The league's only licensed trade market. Every offer passes through, including the ones no one asked for.</p><ul class="subs"><li>Souk of Unsolicited Offers</li><li>Bureau of Lopsided Two-for-Ones</li><li>Office of "Just Checking In"</li></ul></div>
+        </div>
+
+        <!-- ROW 4: INDEPENDENT -->
+        <div class="row4">
+          <div class="indep z" id="indep">
+            <h3>Independent Establishments and League Corporations</h3>
+            <ul>
+              <li>Federal Reserve of FAAB</li><li>Draft Order Lottery Authority</li><li>Keeper Rights Administration</li><li>Bureau of Injury Designations (Questionable)</li><li>Load Management Review Board</li><li>Minutes Restriction Monitoring Authority</li>
+              <li>Playoff Seeding Tiebreaker Board</li><li>Trophy Custody &amp; Engraving Service</li><li>National Archive of Bad Trades</li><li>Commission on Tanking Ethics</li><li>Office of Unread Rules Proposals</li><li>Group Chat Renaming Commission</li>
+              <li>Commission on the Commission</li><li>Bureau of Late Lineup Locks</li><li>Office of Unfinished Punishments</li><li>Box Score Verification Corps</li><li>Rest Day Forecasting Agency</li><li>Office of Special Counsel (Veto Appeals)</li>
+              <li>Selective Autodraft System</li><li>League Postal Service (DMs)</li><li>Advisory Council on Advisory Councils</li><li>Triple-Double Standards Bureau</li><li>Office of Mid-Game Refresh Anxiety</li><li>Committee on Forming Committees</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ROW 5: ASSEMBLY -->
+        <div class="row5">
+          <div class="assembly z" id="assembly">
+            <h3>The Comitia: Assembly of All Managers</h3>
+            <p>Every manager in the league. Meets in the group chat, continuously. Votes as needed to pass rules, ratify trades and declare beef.</p>
+            <div class="chips">
+              <span>DC</span><span>Cott</span><span class="v">Moe</span><span class="v">Zesty</span><span>Coby</span><span>Marco</span><span>Andy</span><span>Jesse</span><span>Torin</span><span>Elias</span><span>Samir</span><span>Chuck</span><span>DK</span><span>David</span><span>Bryan</span><span>Joel</span><span>Ean</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="boundary"><span>Jurisdictional boundary · The Charter does not apply past this line</span></div>
+
+      <div class="cviocol">
+        <div class="cvio z" id="cvio">
+          <div class="approved">EFFICIENT</div>
+          <span class="tag">Outside the Charter</span>
+          <h3>Central Vibes Intelligence Office</h3>
+          <p>Fully independent. Not established by the Charter, not funded by Means and Ways, not reviewable by the Substratum. Reads the room so nobody else has to.</p>
+          <div class="mini" aria-label="Complete CVIO org chart">
+            <div><b>Moe</b>President</div>
+            <i></i>
+            <div><b>Zesty</b>Assistant to the Office</div>
+          </div>
+          <dl class="stats">
+            <dt>Committees</dt><dd>0</dd>
+            <dt>Sub-bureaus</dt><dd>0</dd>
+            <dt>Dotted-line relationships</dt><dd>0</dd>
+            <dt>Vacant seats</dt><dd>0</dd>
+            <dt>Pending memos</dt><dd>0</dd>
+            <dt>Avg. decision time</dt><dd>4 min</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+   </div>
+  </div>
+
+  <section class="more" id="docket">
+    <div class="dk-head">
+      <div>
+        <div class="eyebrow">Bureau of Paperwork · Live docket</div>
+        <h2>The Docket</h2>
+        <p>File a form and it starts at the office that handles that issue. Each office on the route stamps it, some more than once, until the Commissioner grants Ultimate Approval. DC and Moe can veto anything at any time, even after approval. Some forms give other offices a veto too.</p>
+      </div>
+      <div class="acting">
+        <label for="actingAs">Acting as</label>
+        <select id="actingAs"><option value="">Choose your office…</option></select>
+        <small>Honor system. Please do not impersonate the Grand Tooter.</small>
+      </div>
+    </div>
+    <div class="dk-note" id="dkNote">Connecting to the docket…</div>
+    <div class="dk-grid">
+      <div class="panelish" id="filePanel">
+        <h3>File a Form</h3>
+        <p class="sub">Pick the issue. The route is set by statute and cannot be appealed.</p>
+        <div class="types" id="types" role="group" aria-label="Form type"></div>
+        <div class="field"><label>Route</label><ul class="route" id="routePreview"></ul></div>
+        <p class="vetoers" id="vetoPreview"></p>
+        <div class="field" style="margin-top:14px"><label for="fTitle">Subject</label><input type="text" id="fTitle" maxlength="120" placeholder="e.g. Coby's 3-for-1 offer to Marco"></div>
+        <div class="field"><label for="fDetails">Details</label><textarea id="fDetails" maxlength="1200" placeholder="What happened, who is involved, what you want done"></textarea></div>
+        <button class="hold" id="fileBtn" type="button"><span>Hold to file</span></button>
+        <div class="hint" id="fileHint">Press and hold to stamp. Phones that support it will buzz.</div>
+      </div>
+      <div>
+        <div class="tabs" id="tabs" role="group" aria-label="Filter forms"></div>
+        <div class="list" id="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="more">
+    <h2>How a Trade Becomes Final</h2>
+    <p class="lede">The statutory path of a single two-for-one trade through the Government of Fantasia, compared with the same decision made by the Central Vibes Intelligence Office.</p>
+    <div class="proc">
+      <div>
+        <ol>
+          <li><span>Offer is submitted at the <b>Playtime Bazaar</b> and logged by the Souk of Unsolicited Offers.</span></li>
+          <li><span>The <b>Beef Color Guard</b> checks whether the trade crosses an active rivalry line.</span></li>
+          <li><span>The <b>Trade Review Clock Authority</b> starts the review period.</span></li>
+          <li><span>The <b>Missing Cookie Division</b> opens a preliminary collusion inquiry, by default.</span></li>
+          <li><span>The <b>Office of Prismatic Intent</b> issues seven opinions on what the trade means.</span></li>
+          <li><span>The <b>Senate of the Emeriti</b> asks both managers why.</span></li>
+          <li><span><b>Means and Ways</b> confirms both parties have paid dues. <em>They have not.</em></span></li>
+          <li><span>The <b>Public Relations Factory</b> drafts a press release. The <b>Cheeky Whelk Division</b> rejects it.</span></li>
+          <li><span><b>Foreign Affairs</b> notifies the green-text nations. The message fails to deliver.</span></li>
+          <li><span>The <b>Cultural Ambassador's office</b> considers a tribunician veto and schedules a meeting about it.</span></li>
+          <li><span>The <b>Commissioning Affairs Bureau</b> forwards the file to the Commissioner, signed "Acting Dean."</span></li>
+          <li><span>The <b>Commissioner</b> approves.</span></li>
+          <li><span>The <b>Assembly</b> complains. An appeal is filed with the Supreme Tribunal of the Substratum.</span></li>
+          <li><span>The <b>Magistrate General</b> upholds the trade.</span></li>
+          <li><span>The <b>Department of the Gone but Not Forgotten</b> reacts with a thumbs-up. <em>The Secret Society is believed to have known the outcome in advance.</em></span></li>
+        </ol>
+        <div class="elapsed">Elapsed time: 3 weeks · Both players now injured</div>
+      </div>
+      <div class="fast">
+        <h3>Central Vibes Intelligence Office</h3>
+        <ol>
+          <li><span>Moe checks the vibes.</span></li>
+          <li><span>Zesty writes it down.</span></li>
+        </ol>
+        <div class="elapsed">Elapsed time: 4 minutes</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="more">
+    <h2>Register of Offices</h2>
+    <p class="lede">Every officeholder, who they formally answer to, and the dotted lines they actually operate through.</p>
+    <div class="register" id="register"></div>
+  </section>
+
+  <section class="more">
+    <h2>Vacant Positions</h2>
+    <p class="lede">Seats created by the Charter that no one has filled. Their duties are performed by whoever is nearby.</p>
+    <ul class="vac">
+      <li><b>Dean of Commissioning Affairs</b><span>Duties performed by the Vice Dean, acting.</span></li>
+      <li><b>Comptroller of Means and Ways</b><span>Vacant since founding. The Vice-Comptroller signs "on behalf of."</span></li>
+      <li><b>Cultural Ambassador to the Culture</b><span>Offered to the Culture. Awaiting reply.</span></li>
+      <li><b>Chair, Dean Search Committee</b><span>Committee not yet formed. See Committee on Forming Committees.</span></li>
+    </ul>
+  </section>
+
+  <footer>Government of Fantasia · Form SF-17 · Supersedes all prior organizational charts, none of which existed.</footer>
+</div>
+
+<script>
+(function(){
+  const REG = [
+    {n:"DC", b:"Executive", c:"var(--exe)", t:"Commissioner", o:"Office of the Commissioner, Department of Sports and Fantasia", r:"The Charter; the Assembly (in theory)", d:"Means and Ways (funding), Magistrate General (review), Cultural Ambassador (veto)"},
+    {n:"Cott", b:"Executive", c:"var(--exe)", t:"Vice Dean", o:"Commissioning Affairs Bureau, Department of Sports and Fantasia", r:"The Commissioner; the Dean (vacant)", d:"Office of Prismatic Intent"},
+    {n:"Torin", b:"Legislative", c:"var(--leg)", t:"Professor Emeritus", o:"Senate of the Emeriti, Socratic Method Institute", r:"No one. Life tenure.", d:"Means and Ways (questions), Secret Society (alleged)"},
+    {n:"Marco", b:"Legislative", c:"var(--leg)", t:"Vice-Comptroller", o:"Means and Ways Committee", r:"The Comptroller (vacant); the Assembly", d:"Commissioner, Public Relations Factory"},
+    {n:"David", b:"Judicial", c:"var(--jud)", t:"Magistrate General", o:"Supreme Tribunal, Department of the Substratum", r:"The Charter", d:"Commissioner (review), Assembly (appeals)"},
+    {n:"Samir", b:"Judicial", c:"var(--jud)", t:"General Counsel", o:"Office of Prismatic Intent", r:"Magistrate General", d:"Commissioning Affairs Bureau"},
+    {n:"Elias", b:"Judicial", c:"var(--jud)", t:"Principal Investigator", o:"Missing Cookie from the Cookie Jar Division", r:"Magistrate General", d:"Playtime Bazaar (subpoenas)"},
+    {n:"Jesse", b:"Department", c:"var(--exe)", t:"Floor Foreman", o:"Public Relations Factory", r:"The Commissioner", d:"Cheeky Whelk Division (QA), Means and Ways (budget: $0)"},
+    {n:"Chuck", b:"Department", c:"var(--exe)", t:"Quality Assurance", o:"Cheeky Whelk Division", r:"The Commissioner", d:"Public Relations Factory, Foreign Affairs"},
+    {n:"Bryan", b:"Department", c:"var(--exe)", t:"Foreign Affairs", o:"Office of Foreign Affairs, Green Text Division", r:"The Commissioner", d:"Cheeky Whelk Division, Cultural Ambassador"},
+    {n:"DK", b:"Department", c:"var(--exe)", t:"Manager of Management", o:"Office of the Cultural Ambassador to the Culture", r:"The Culture (unresponsive)", d:"Commissioner (tribunician veto), Beef Color Guard"},
+    {n:"Andy", b:"Armed Service", c:"var(--exe)", t:"Beef Color Guard, Four Star General", o:"Beef Color Guard", r:"The Commissioner (ceremonially)", d:"Playtime Bazaar, Cultural Ambassador"},
+    {n:"Coby", b:"Market", c:"var(--exe)", t:"Sheikh", o:"The Playtime Bazaar", r:"The Commissioner", d:"Cookie Jar Division, Beef Color Guard"},
+    {n:"Joel", b:"Unacknowledged", c:"var(--alleged)", t:"Grand Tooter", o:"Secret Society of the Implicated Horn", r:"[redacted]", d:"The Charter, the Senate, the Commissioner (all alleged)"},
+    {n:"Ean", b:"Dormant", c:"var(--muted)", t:"Chief Lurking Officer", o:"Department of the Gone but Not Forgotten", r:"No one has checked", d:"The Charter (read, not acknowledged), Supreme Tribunal (observes)"},
+    {n:"Moe", b:"Independent", c:"var(--vibe)", t:"President", o:"Central Vibes Intelligence Office", r:"The Vibes", d:"None"},
+    {n:"Zesty", b:"Independent", c:"var(--vibe)", t:"Assistant to the Office", o:"Central Vibes Intelligence Office", r:"Moe", d:"None"}
+  ];
+  const esc = s => s.replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+  document.getElementById('register').innerHTML = REG.map(p =>
+    `<article class="reg" style="--c:${p.c}"><div class="n"><strong>${esc(p.n)}</strong><span>${esc(p.b)}</span></div>
+     <div class="t">${esc(p.t)}</div>
+     <dl><dt>Office</dt><dd>${esc(p.o)}</dd><dt>Reports to</dt><dd>${esc(p.r)}</dd><dt>Dotted lines</dt><dd>${esc(p.d)}</dd></dl></article>`).join('');
+
+  const C = document.getElementById('canvas');
+  const G = document.getElementById('wire-g');
+  const SVG = document.getElementById('wires');
+  const LB = document.getElementById('labels');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function box(id){
+    const el = document.getElementById(id); let x=0,y=0,e=el;
+    while(e && e!==C){ x+=e.offsetLeft; y+=e.offsetTop; const p=e.offsetParent; if(p && p!==C){ x+=p.clientLeft; y+=p.clientTop; } e=p; }
+    return {x,y,w:el.offsetWidth,h:el.offsetHeight};
+  }
+  function anc(id, side, f){
+    f = (f==null) ? .5 : f; const b = box(id);
+    if(side==='top') return {x:b.x+b.w*f, y:b.y, nx:0, ny:-1};
+    if(side==='bottom') return {x:b.x+b.w*f, y:b.y+b.h, nx:0, ny:1};
+    if(side==='left') return {x:b.x, y:b.y+b.h*f, nx:-1, ny:0};
+    return {x:b.x+b.w, y:b.y+b.h*f, nx:1, ny:0};
+  }
+  function path(d, cls, marker){
+    const p = document.createElementNS(NS,'path'); p.setAttribute('d', d); p.setAttribute('class','w '+cls);
+    if(marker) p.setAttribute('marker-end','url(#'+marker+')'); G.appendChild(p);
+  }
+  function label(x,y,text,cls,rot){
+    const d = document.createElement('div'); d.className = 'lbl '+(cls||'')+(rot?' rot':''); d.textContent = text;
+    d.style.left = x+'px'; d.style.top = y+'px'; LB.appendChild(d);
+  }
+  const MK = {auth:'m-auth', adv:'m-adv', inv:'m-inv', alleged:'m-alleged', vibe:'m-vibe'};
+  function stroke(d, s, arrow){
+    if(s==='veto'){ path(d,'veto-o','m-veto'); path(d,'veto-i'); }
+    else path(d, s, arrow===false ? null : MK[s]);
+  }
+  function curve(a, b, s, text, opt){
+    opt = opt||{}; const A = anc(...a), B = anc(...b);
+    const dist = Math.hypot(B.x-A.x, B.y-A.y);
+    const o = Math.max(40, Math.min(160, dist*.4)) * (opt.k||1);
+    const c1 = {x:A.x+A.nx*o, y:A.y+A.ny*o}, c2 = {x:B.x+B.nx*o, y:B.y+B.ny*o};
+    stroke(`M${A.x},${A.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${B.x},${B.y}`, s, opt.arrow);
+    if(text){ const t = opt.lt==null?.5:opt.lt, u=1-t;
+      const x = u*u*u*A.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*B.x, y = u*u*u*A.y+3*u*u*t*c1.y+3*u*t*t*c2.y+t*t*t*B.y;
+      label(x+(opt.dx||0), y+(opt.dy||0), text, s); }
+  }
+  function poly(pts, s, text, li, lf, rot){
+    stroke('M'+pts.map(p=>p.x+','+p.y).join(' L'), s);
+    if(text){ const p=pts[li], q=pts[li+1]; label(p.x+(q.x-p.x)*lf, p.y+(q.y-p.y)*lf, text, s, rot); }
+  }
+  function tree(parent, kids, gap){
+    const P = anc(parent,'bottom'); const tops = kids.map(k=>anc(k,'top'));
+    const bus = Math.min(...tops.map(t=>t.y)) - gap;
+    path(`M${P.x},${P.y} V${bus}`,'tree');
+    const xs = tops.map(t=>t.x).concat(P.x);
+    path(`M${Math.min(...xs)},${bus} H${Math.max(...xs)}`,'tree');
+    tops.forEach(t=>path(`M${t.x},${bus} V${t.y}`,'tree'));
+  }
+
+  function draw(){
+    G.innerHTML=''; LB.innerHTML='';
+    SVG.setAttribute('width', C.offsetWidth); SVG.setAttribute('height', C.offsetHeight);
+    tree('charter',['leg','exe','jud'],30);
+    tree('exe',['d-pr','d-whelk','d-foreign','d-culture','d-guard','d-bazaar'],34);
+
+    // inside the branches
+    curve(['commish','bottom'],['cott','top'],'adv','Acting-Dean memos');
+    curve(['senate','bottom'],['means','top'],'adv','asks "but why?"');
+    curve(['commish','left',.8],['means','right',.25],'auth','requests funding',{lt:.5});
+    curve(['magistrate','left',.5],['commish','right',.5],'auth','overturns (rarely)');
+    curve(['cott','right',.6],['prismatic','left',.5],'adv','interprets own memos');
+
+    // branches to departments
+    curve(['cookie','bottom'],['d-bazaar','top',.6],'inv','subpoenas trade logs',{lt:.45});
+    curve(['means','bottom',.5],['d-pr','top',.35],'adv','PR budget: $0',{lt:.62});
+    curve(['d-culture','top',.7],['exe','bottom',.8],'veto','Tribunician veto',{lt:.5});
+
+    // department web (below)
+    curve(['d-pr','bottom',.86],['d-whelk','bottom',.14],'adv','hot takes sent for QA',{k:.8});
+    curve(['d-whelk','bottom',.42],['d-pr','bottom',.5],'adv','returned: not cheeky enough',{k:1.35});
+    curve(['d-whelk','bottom',.84],['d-foreign','bottom',.16],'adv','screens outgoing memes',{k:.8});
+    curve(['d-foreign','bottom',.84],['d-culture','bottom',.16],'adv','joint communiqués',{k:.8});
+    curve(['d-culture','bottom',.84],['d-guard','bottom',.16],'adv','schedules ceremonial beef',{k:.8});
+    curve(['d-guard','bottom',.84],['d-bazaar','bottom',.16],'auth','escorts contested trades',{k:.8});
+
+    // shadow influence + lurking
+    curve(['ss','right',.25],['charter','left',.5],'alleged','co-authored? (unconfirmed)');
+    curve(['ss','bottom',.3],['senate','top',.5],'alleged','alleged influence',{lt:.22});
+    curve(['ss','bottom',.85],['commish','top',.25],'alleged','alleged influence',{lt:.55});
+    curve(['gbnf','left',.5],['charter','right',.5],'adv','read, never acknowledged',{arrow:false});
+    curve(['gbnf','bottom',.5],['magistrate','top',.75],'adv','watches all proceedings',{lt:.35});
+
+    // Assembly gutter routes (left)
+    const aL1 = anc('assembly','left',.7), sen = anc('senate','left',.5);
+    poly([aL1,{x:24,y:aL1.y},{x:24,y:sen.y},sen],'auth','confirms Senators for life',1,.5,true);
+    const aL2 = anc('assembly','left',.3), mw = anc('means','left',.55);
+    poly([aL2,{x:50,y:aL2.y},{x:50,y:mw.y},mw],'auth','pays dues (late)',1,.35,true);
+    // Assembly gutter routes (right)
+    const aR1 = anc('assembly','right',.3), mg = anc('magistrate','right',.5);
+    poly([aR1,{x:1282,y:aR1.y},{x:1282,y:mg.y},mg],'auth','appeals everything',1,.55,true);
+    const aR2 = anc('assembly','right',.58), ch = anc('charter','top',.5);
+    poly([aR2,{x:1304,y:aR2.y},{x:1304,y:16},{x:ch.x,y:16},ch],'auth','ratifies the Charter at each Draft',2,.5,false);
+
+    // the one clean line
+    const cv = anc('cvio','bottom',.5), aR3 = anc('assembly','right',.86);
+    poly([cv,{x:cv.x,y:aR3.y},aR3],'vibe','Weekly Vibe Readout · on time · one sentence',0,.5,false);
+  }
+
+  // sizing
+  const scroller = document.getElementById('scroller'), sizer = document.getElementById('sizer');
+  const bFit = document.getElementById('z-fit'), bFull = document.getElementById('z-full');
+  let mode = null;
+  function applyScale(){
+    const avail = scroller.clientWidth;
+    const want = mode || (avail/1700 >= .55 ? 'fit' : 'full');
+    const s = want==='fit' ? Math.min(1, avail/1700) : 1;
+    C.style.transform = s===1 ? '' : `scale(${s})`;
+    sizer.style.width = (1700*s)+'px'; sizer.style.height = (C.offsetHeight*s)+'px';
+    bFit.setAttribute('aria-pressed', want==='fit'); bFull.setAttribute('aria-pressed', want==='full');
+  }
+  bFit.addEventListener('click',()=>{mode='fit';applyScale();});
+  bFull.addEventListener('click',()=>{mode='full';applyScale();});
+  function redraw(){ draw(); applyScale(); }
+  redraw();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+  window.addEventListener('load', redraw);
+  let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(applyScale,80);});
+})();
+</script>
+
+<script>
+(function(){
+  const PEOPLE = [
+    ["commish","DC","Commissioner","commish"],
+    ["cott","Cott","Vice Dean, Commissioning Affairs","cott"],
+    ["cvio","Moe","President, Central Vibes Intelligence","cvio"],
+    ["zesty","Zesty","Assistant to the Office of Central Vibes Intelligence","cvio"],
+    ["bazaar","Coby","Sheikh of the Playtime Bazaar","d-bazaar"],
+    ["means","Marco","Vice-Comptroller, Means and Ways","means"],
+    ["guard","Andy","Four Star General, Beef Color Guard","d-guard"],
+    ["pr","Jesse","Floor Foreman, Public Relations Factory","d-pr"],
+    ["senate","Torin","Professor Emeritus, Senate of the Emeriti","senate"],
+    ["cookie","Elias","Principal Investigator, Missing Cookie Division","cookie"],
+    ["prismatic","Samir","General Counsel, Office of Prismatic Intent","prismatic"],
+    ["whelk","Chuck","Quality Assurance, Cheeky Whelk Division","d-whelk"],
+    ["culture","DK","Manager of Management, Cultural Ambassador's Office","d-culture"],
+    ["magistrate","David","Magistrate General, Supreme Tribunal","magistrate"],
+    ["foreign","Bryan","Foreign Affairs, Green Text Division","d-foreign"],
+    ["society","Joel","Grand Tooter, Secret Society","ss"],
+    ["gbnf","Ean","Chief Lurking Officer","gbnf"]
+  ];
+  const P = {}; PEOPLE.forEach(([k,n,t,el])=>P[k]={k,n,t,el});
+  const SHORT = {commish:"Commissioner",cott:"Commissioning Affairs",cvio:"Vibes Office",zesty:"Vibes Office",bazaar:"Playtime Bazaar",means:"Means and Ways",guard:"Beef Color Guard",pr:"PR Factory",senate:"Senate",cookie:"Cookie Jar Division",prismatic:"Prismatic Intent",whelk:"Cheeky Whelk",culture:"Cultural Ambassador",magistrate:"Substratum",foreign:"Foreign Affairs",society:"Secret Society",gbnf:"Gone but Not Forgotten"};
+  const ALWAYS = ["commish","cvio"];
+  const TYPES = [
+    {id:"T-2", name:"Trade Ratification Petition", steps:[["bazaar","Log the offer at the Souk"],["guard","Clear active rivalry lines"],["cookie","Preliminary collusion inquiry"],["prismatic","Opine on what the trade means"],["bazaar","Re-certify the offer, in case it changed"],["cott","Forward to the Commissioner as Acting Dean"],["commish","Grant Ultimate Approval"]], veto:["culture","magistrate"]},
+    {id:"R-9", name:"Rule Change Proposal", steps:[["senate","Ask a follow-up question"],["prismatic","Interpret from every angle"],["senate","Ask a second follow-up question"],["means","Assess the fiscal impact"],["culture","Check it against tradition"],["magistrate","Constitutional review"],["cott","Forward as Acting Dean"],["commish","Grant Ultimate Approval"]], veto:["senate","magistrate"]},
+    {id:"D-4", name:"Dues or Payout Dispute", steps:[["means","Open the ledger"],["cookie","Find the missing cookies"],["magistrate","Rule on liability"],["means","Reconcile the Venmo"],["cott","Forward as Acting Dean"],["commish","Grant Ultimate Approval"]], veto:["means"]},
+    {id:"B-1", name:"Declaration of Beef", steps:[["guard","Register the beef"],["whelk","Certify cheekiness"],["pr","Draft the press release"],["foreign","Notify the green-text nations"],["guard","Raise the colors"],["culture","Confirm cultural significance"],["commish","Grant Ultimate Approval"]], veto:["whelk"]},
+    {id:"C-7", name:"Collusion or Tanking Complaint", steps:[["cookie","Open an investigation"],["gbnf","Provide a witness statement"],["prismatic","Determine intent"],["magistrate","Hear the case"],["cookie","Close the investigation"],["commish","Grant Ultimate Approval"]], veto:["magistrate"]},
+    {id:"P-3", name:"Press Correction Request", steps:[["pr","Review the offending ranking"],["whelk","Quality-check the correction"],["senate","Ask why"],["pr","Issue the correction"],["foreign","Distribute abroad"],["commish","Grant Ultimate Approval"]], veto:["pr"]},
+    {id:"L-0", name:"Last-Place Punishment Proposal", steps:[["culture","Check it against tradition"],["guard","Assess the humiliation"],["pr","Plan the coverage"],["means","Price it out"],["senate","Ask a follow-up question"],["culture","Re-confirm tradition"],["commish","Grant Ultimate Approval"]], veto:["culture","guard"]},
+    {id:"S-?", name:"Secret Society Inquiry", steps:[["society","Neither confirm nor deny"],["gbnf","Observe silently"],["society","Deny receiving this form"],["commish","Grant Ultimate Approval"]], veto:["society"]}
+  ];
+  const T = {}; TYPES.forEach(t=>T[t.id]=t);
+  const LURK_MS = 48*3600*1000;
+
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, text) => { const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; };
+  const store = { get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+  const ago = ms => { const s=(Date.now()-ms)/1000; if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+"m ago"; if(s<86400) return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago"; };
+  const buzz = p => { try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} };
+  function toast(msg){ const t=el("div","toast",msg); t.setAttribute("role","status"); document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
+
+  const openLogs = new Set();
+  let me = store.get("fantasia.actingAs") || "";
+  let db = null, canWrite = true, forms = [], filter = "desk", picked = "T-2", fresh = null;
+
+  // Acting-as selector
+  const sel = $("actingAs");
+  PEOPLE.forEach(([k,n,t])=>{ const o=el("option",null,n+" · "+t); o.value=k; sel.appendChild(o); });
+  sel.value = me;
+  sel.addEventListener("change",()=>{ me=sel.value; store.set("fantasia.actingAs",me); if(me && filter!=="desk"){} render(); });
+
+  // Hold-to-stamp buttons
+  function holdable(btn, ms, onDone){
+    let raf=null, start=0;
+    const stop = () => { if(raf){cancelAnimationFrame(raf); raf=null;} btn.style.setProperty("--p",0); };
+    const tick = t => { const p=Math.min(1,(t-start)/ms); btn.style.setProperty("--p",p);
+      if(p>=1){ raf=null; btn.style.setProperty("--p",0); buzz([25,40,90]); onDone(); } else raf=requestAnimationFrame(tick); };
+    btn.addEventListener("pointerdown",e=>{ if(btn.disabled) return; e.preventDefault(); try{btn.setPointerCapture(e.pointerId);}catch(_){}
+      buzz(12); start=performance.now(); raf=requestAnimationFrame(tick); });
+    ["pointerup","pointercancel","pointerleave"].forEach(ev=>btn.addEventListener(ev,stop));
+    btn.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ") && !e.repeat && !btn.disabled){ e.preventDefault(); onDone(); }});
+    btn.addEventListener("contextmenu",e=>e.preventDefault());
+  }
+
+  // Filing panel
+  function renderTypes(){
+    const box=$("types"); box.textContent="";
+    TYPES.forEach(t=>{ const b=el("button","type"); b.type="button"; b.setAttribute("aria-pressed",t.id===picked);
+      b.appendChild(el("span",null,"FORM "+t.id)); b.appendChild(el("b",null,t.name));
+      b.addEventListener("click",()=>{ picked=t.id; renderTypes(); renderPreview(); }); box.appendChild(b); });
+  }
+  function routeList(ul, steps, at, status){
+    ul.textContent=""; const seen={};
+    steps.forEach(([o],i)=>{ const li=el("li",null,SHORT[o]); li.title=P[o].n+": "+steps[i][1];
+      if(seen[o]) li.classList.add("repeat"); seen[o]=1;
+      if(at!=null){ if(i<at || status==="approved") li.classList.add("done"); else if(i===at && status==="routing") li.classList.add("now"); }
+      ul.appendChild(li); });
+  }
+  function vetoText(t){ return [...ALWAYS,...t.veto].map(k=>P[k].n+" ("+SHORT[k]+")").join(", "); }
+  function renderPreview(){
+    const t=T[picked]; routeList($("routePreview"), t.steps);
+    const v=$("vetoPreview"); v.textContent=""; v.appendChild(el("b",null,"Veto power: ")); v.appendChild(document.createTextNode(vetoText(t)));
+  }
+  holdable($("fileBtn"), 650, async ()=>{
+    if(!db){ toast("The docket isn't connected in this view."); return; }
+    if(!me){ toast("Choose who you're acting as first."); sel.focus(); return; }
+    const title=$("fTitle").value.trim(); if(!title){ toast("Give the form a subject."); $("fTitle").focus(); return; }
+    const t=T[picked], now=Date.now();
+    const body={type:t.id, title, details:$("fDetails").value.trim(), filedBy:me, filedAt:now, updatedAt:now, status:"routing", step:0,
+      log:[{at:now, by:me, act:"filed", note:"Filed with "+SHORT[t.steps[0][0]]}]};
+    try{ const ref=await db.collection("forms").add(body); fresh=ref.id; $("fTitle").value=""; $("fDetails").value="";
+      filter="open"; toast("Form "+t.id+" filed. Now at "+SHORT[t.steps[0][0]]+".");
+    }catch(e){ failed(e); }
+  });
+
+  function failed(e){
+    if(e && e.code==="invalid_argument"){ canWrite=false; setNote("You can read the docket, but your access level can't stamp forms. Ask Jesse to share the page with you as an Editor.","warn"); render(); }
+    else if(e && e.code==="quota_exceeded") toast("The docket is full. Old forms need to be cleared out.");
+    else toast("That stamp didn't go through. Try again in a moment.");
+  }
+
+  // Actions on a form
+  async function act(f, kind, note){
+    const t=T[f.data.type]; const b=JSON.parse(JSON.stringify(f.data)); const now=Date.now(); const last=b.step>=t.steps.length-1;
+    if(kind==="stamp"){ if(last){ b.status="approved"; b.log.push({at:now,by:me,act:"final",note:note||"Ultimate Approval granted"}); }
+      else { b.log.push({at:now,by:me,act:"stamped",note:note||t.steps[b.step][1]}); b.step++; } }
+    if(kind==="return"){ b.log.push({at:now,by:me,act:"returned",note:note||"Sent back to "+SHORT[t.steps[b.step-1][0]]}); b.step--; }
+    if(kind==="waive"){ b.log.push({at:now,by:me,act:"waived",note:"Lurker Waiver invoked after 48 hours of silence"}); b.step++; }
+    if(kind==="veto"){ b.status="vetoed"; b.vetoedBy=me; b.log.push({at:now,by:me,act:"vetoed",note:note||"Vetoed"}); }
+    if(kind==="withdraw"){ b.status="withdrawn"; b.log.push({at:now,by:me,act:"withdrawn",note:note||"Withdrawn by filer"}); }
+    b.updatedAt=now;
+    try{ await db.collection("forms").doc(f.id).set(b); fresh=f.id;
+      const msg={stamp:last?"Ultimate Approval granted.":"Stamped. Sent to "+SHORT[t.steps[b.step][0]]+".",return:"Returned to "+SHORT[t.steps[b.step][0]]+".",waive:"Lurker Waiver invoked.",veto:"VETOED.",withdraw:"Form withdrawn."}[kind];
+      toast(msg);
+    }catch(e){ failed(e); }
+  }
+
+  function holdBtn(label, cls, ms, fn){ const b=el("button","hold"+(cls?" "+cls:"")); b.type="button"; b.appendChild(el("span",null,label)); holdable(b,ms,fn); if(!db||!canWrite) b.disabled=true; return b; }
+
+  function formCard(f){
+    const d=f.data, t=T[d.type]; if(!t) return null;
+    const card=el("article","form "+d.status);
+    const top=el("div","top"); top.appendChild(el("span","no","Form "+t.id+" · No. "+f.id.slice(-5).toUpperCase()+" · "+t.name));
+    top.appendChild(el("span","pill "+d.status,d.status==="routing"?"In routing":d.status)); card.appendChild(top);
+    card.appendChild(el("h4",null,d.title||"Untitled"));
+    if(d.details) card.appendChild(el("p","det",d.details));
+    const ul=el("ul","route"); routeList(ul,t.steps,d.step,d.status); card.appendChild(ul);
+
+    const cur=t.steps[d.step]; const lastAt=d.log.length?d.log[d.log.length-1].at:d.filedAt;
+    if(d.status==="routing"){
+      const desk=el("div","desk"); desk.appendChild(document.createTextNode("Step "+(d.step+1)+" of "+t.steps.length+": "));
+      desk.appendChild(el("b",null,P[cur[0]].n+", "+SHORT[cur[0]])); desk.appendChild(document.createTextNode(" must "+cur[1].charAt(0).toLowerCase()+cur[1].slice(1)+". Arrived "+ago(lastAt)+"."));
+      card.appendChild(desk);
+    }
+    if(d.status==="approved"||d.status==="vetoed"){ const s=el("div","bigstamp "+d.status,d.status==="approved"?"APPROVED":"VETOED"); if(fresh===f.id) s.classList.add("fresh"); card.appendChild(s); }
+
+    const actions=el("div","actions"); let noteIn=null;
+    const myTurn = d.status==="routing" && me===cur[0];
+    const vetoers=[...ALWAYS,...t.veto]; const canVeto = me && vetoers.includes(me) && (d.status==="routing"||d.status==="approved");
+    if(myTurn||canVeto){ const w=el("div","note-in"); noteIn=el("input"); noteIn.type="text"; noteIn.maxLength=200; noteIn.placeholder="Optional remarks for the record"; noteIn.setAttribute("aria-label","Remarks"); w.appendChild(noteIn); actions.appendChild(w); }
+    const nv=()=>noteIn?noteIn.value.trim():"";
+    if(myTurn){
+      const last=d.step===t.steps.length-1;
+      actions.appendChild(holdBtn(last?"Hold: Ultimate Approval":"Hold to stamp","",last?1100:650,()=>act(f,"stamp",nv())));
+      if(d.step>0) actions.appendChild(holdBtn("Return","quiet",500,()=>act(f,"return",nv())));
+    }
+    if(d.status==="routing" && cur[0]==="gbnf" && me && me!=="gbnf" && Date.now()-lastAt>LURK_MS)
+      actions.appendChild(holdBtn("Invoke Lurker Waiver","quiet",900,()=>act(f,"waive")));
+    if(canVeto) actions.appendChild(holdBtn(ALWAYS.includes(me)?(me==="cvio"?"Hold: Vibes Veto":"Hold: Commissioner's Veto"):"Hold to veto","veto",1400,()=>act(f,"veto",nv())));
+    if(d.status==="routing" && me===d.filedBy && !myTurn) actions.appendChild(holdBtn("Withdraw","quiet",800,()=>act(f,"withdraw",nv())));
+    if(actions.childNodes.length) card.appendChild(actions);
+    else if(d.status==="routing" && me){ card.appendChild(el("div","hint","Not your desk. "+P[cur[0]].n+" has it."+(vetoers.includes(me)?"":" You hold no veto on this form."))); }
+
+    const vt=el("p","vetoers"); vt.appendChild(el("b",null,"Veto power: ")); vt.appendChild(document.createTextNode(vetoText(t))); card.appendChild(vt);
+
+    const det=el("details","log"); if(openLogs.has(f.id)) det.open=true; det.addEventListener("toggle",()=>{ det.open?openLogs.add(f.id):openLogs.delete(f.id); }); det.appendChild(el("summary",null,"Record of proceedings ("+d.log.length+")"));
+    const ol=el("ol"); d.log.slice().reverse().forEach(e=>{ const li=el("li"); li.appendChild(el("span","mark "+e.act,{filed:"Filed",stamped:"Stamped",returned:"Returned",final:"Ultimate",vetoed:"Vetoed",waived:"Waived",withdrawn:"Withdrawn"}[e.act]||e.act));
+      const tx=el("div"); tx.appendChild(el("b",null,(P[e.by]?P[e.by].n:"Someone")+" · ")); tx.appendChild(document.createTextNode(e.note||"")); tx.appendChild(document.createTextNode(" ")); tx.appendChild(el("em",null,ago(e.at))); li.appendChild(tx); ol.appendChild(li); });
+    det.appendChild(ol); card.appendChild(det);
+    if(fresh===f.id){ card.classList.add("thunk"); }
+    return card;
+  }
+
+  const TABS=[["desk","Your desk"],["open","In routing"],["approved","Approved"],["vetoed","Vetoed"],["all","All"]];
+  function matches(f,k){ const d=f.data, t=T[d.type]; if(!t) return false;
+    if(k==="desk") return me && ((d.status==="routing" && t.steps[d.step][0]===me) || (d.status==="routing" && d.filedBy===me));
+    if(k==="open") return d.status==="routing"; if(k==="all") return true; return d.status===k; }
+  function render(){
+    const tabs=$("tabs"); tabs.textContent="";
+    TABS.forEach(([k,l])=>{ const b=el("button",null,l); b.type="button"; b.setAttribute("aria-pressed",k===filter); b.appendChild(el("span",null,String(forms.filter(f=>matches(f,k)).length)));
+      b.addEventListener("click",()=>{filter=k; render();}); tabs.appendChild(b); });
+    const list=$("list"); list.textContent="";
+    const shown=forms.filter(f=>matches(f,filter));
+    if(!shown.length){ list.appendChild(el("div","empty", !db ? "The docket will appear here once it connects." :
+      filter==="desk" ? (me ? "Nothing on "+P[me].n+"'s desk. Forms you need to stamp, and forms you filed, will appear here." : "Choose who you're acting as to see your desk.") :
+      forms.length ? "No forms in this pile." : "No forms filed yet. File the first one, and it will start moving through the offices.")); }
+    shown.forEach(f=>{ const c=formCard(f); if(c) list.appendChild(c); });
+    fresh=null;
+    // chart badges
+    document.querySelectorAll(".badge").forEach(b=>b.remove());
+    const counts={}; forms.forEach(f=>{ const d=f.data,t=T[d.type]; if(t && d.status==="routing"){ const k=t.steps[d.step][0]; counts[k]=(counts[k]||0)+1; }});
+    Object.entries(counts).forEach(([k,n])=>{ const host=document.getElementById(P[k].el); if(host){ const b=el("span","badge",String(n)); b.title=n+" form"+(n>1?"s":"")+" waiting"; host.appendChild(b); }});
+    $("fileBtn").disabled=!db||!canWrite;
+  }
+  function setNote(msg,kind){ const n=$("dkNote"); n.hidden=!msg; n.textContent=msg||""; if(kind) n.dataset.kind=kind; else delete n.dataset.kind; }
+
+  renderTypes(); renderPreview(); render();
+
+  (async()=>{
+    const [d,u] = await Promise.all([window.claude?.use("db") ?? null, window.claude?.use("user") ?? null]);
+    if(!d){ setNote("The live docket is unavailable in this view. The live docket only runs on the claude.ai version of this page. This copy shows the chart and the forms, but nothing can be filed or stamped here."); return; }
+    db=d;
+    try{ if(u){ const w=await u.can("data.write"); if(w===false){ canWrite=false; } } }catch(e){}
+    setNote(canWrite?"":"You can read the docket, but your access level can't stamp forms. Ask Jesse to share the page with you as an Editor.", canWrite?null:"warn");
+    let loaded=false; const timer=setTimeout(()=>{ if(!loaded) setNote("The docket can't be reached yet. Forms may be out of date.","warn"); },10000);
+    db.collection("forms").orderBy("updatedAt","desc").limit(300).onSnapshot(snap=>{
+      forms=snap.docs.filter(x=>x.exists).map(x=>({id:x.id,data:x.data()}));
+      if(!snap.metadata.fromCache){ loaded=true; clearTimeout(timer); if(canWrite) setNote(""); }
+      render();
+    }, e=>{ clearTimeout(timer); setNote("The docket stopped updating. Reload the page to reconnect.","warn"); });
+    setInterval(()=>{ const a=document.activeElement; if(!document.hidden && !(a && a.closest && a.closest("#list") && a.tagName==="INPUT")) render(); },60000);
+  })();
+})();
+</script>
+</body>
+</html>
